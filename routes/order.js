@@ -5,7 +5,7 @@ const {
     getOrderById,
     updateOrderStatus,
     getCustomerOrders,
-} = require('../services/orderService');
+} = require('../services/order');
 const jwt = require("jsonwebtoken");
 const SECRET_KEY = "your_secret_key";
 

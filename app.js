@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const orderRoutes = require('./routes/order.js');
+const deliveryRoutes = require('./routes/delivery.js');
 const connectDB = require('./dbConfig.js');
 const dotenv = require('dotenv');
 
@@ -22,7 +23,9 @@ app.use(bodyParser.json());
 connectDB();
 
 // Use the authentication routes
-app.use('/orders', orderRoutes);
+app.use('/order', orderRoutes);
+app.use('/delivery', deliveryRoutes);
+
 
 // Start the server if not in test mode
 if (process.env.NODE_ENV !== 'test') {

@@ -28,7 +28,7 @@ describe("Order API", () => {
 
   it("should place a new order", async () => {
     const res = await request(app)
-      .post("/orders")
+      .post("/order")
       .set(
         "Authorization",
         `Bearer ${mockToken("6736db2b67909bf7fe940230", "customer")}`
@@ -47,7 +47,7 @@ describe("Order API", () => {
 
   it("should get an order by ID", async () => {
     const res = await request(app)
-      .get(`/orders/${orderId}`)
+      .get(`/order/${orderId}`)
       .set(
         "Authorization",
         `Bearer ${mockToken("6736db2b67909bf7fe940230", "customer")}`
@@ -59,7 +59,7 @@ describe("Order API", () => {
 
   it("should update an order status", async () => {
     const res = await request(app)
-      .put(`/orders/${orderId}/status`)
+      .put(`/order/${orderId}/status`)
       .set(
         "Authorization",
         `Bearer ${mockToken("6736db2b67909bf7fe940230", "restaurant_owner")}`
@@ -70,12 +70,12 @@ describe("Order API", () => {
     assert.equal(res.body.status, "completed"); // Check that the status was updated
   });
 
-  it("should return 403 for delivery_partner trying to update order status", async () => {
+  it("should return 403 for delivery_personnel trying to update order status", async () => {
     const res = await request(app)
-      .put(`/orders/${orderId}/status`)
+      .put(`/order/${orderId}/status`)
       .set(
         "Authorization",
-        `Bearer ${mockToken("6736db2b67909bf7fe940230", "delivery_partner")}`
+        `Bearer ${mockToken("6736db2b67909bf7fe940230", "delivery_personnel")}`
       )
       .send({ status: "completed" });
 
@@ -85,7 +85,7 @@ describe("Order API", () => {
 
   it("should get all orders for a customer", async () => {
     const res = await request(app)
-      .get(`/orders/customers/6736db2b67909bf7fe940230`)
+      .get(`/order/customers/6736db2b67909bf7fe940230`)
       .set(
         "Authorization",
         `Bearer ${mockToken("6736db2b67909bf7fe940230", "customer")}`
@@ -97,7 +97,7 @@ describe("Order API", () => {
 
   it("should return 403 for restaurant_owner trying to get all orders", async () => {
     const res = await request(app)
-      .get(`/orders/customers/6736db2b67909bf7fe940230`)
+      .get(`/order/customers/6736db2b67909bf7fe940230`)
       .set(
         "Authorization",
         `Bearer ${mockToken("6736db2b67909bf7fe940230", "restaurant_owner")}`
@@ -109,7 +109,7 @@ describe("Order API", () => {
 
   it("should return 404 for non-existing order", async () => {
     const res = await request(app)
-      .get(`/orders/6736f9f153c8c36cfdc25de5`)
+      .get(`/order/6736f9f153c8c36cfdc25de5`)
       .set(
         "Authorization",
         `Bearer ${mockToken("6736db2b67909bf7fe940230", "customer")}`
@@ -118,4 +118,69 @@ describe("Order API", () => {
     assert.equal(res.status, 404);
     assert.equal(res.body.message, "Order not found"); // Check the not found message
   });
+
+    it("should get a list of available deliveries", async () => {
+      const res = await request(app)
+        .get("/delivery")
+        .set(
+          "Authorization",
+          `Bearer ${mockToken(
+            "6736db2b67909bf7fe940230",
+            "delivery_personnel"
+          )}`
+        );
+
+      assert.equal(res.status, 200);
+      assert.ok(Array.isArray(res.body)); // Check that the response is an array
+    });
+
+    it("should return 404 if delivery not found", async () => {
+      const res = await request(app)
+        .post(`/delivery/${orderId}`) // Assuming 999 is a non-existent delivery ID
+        .set(
+          "Authorization",
+          `Bearer ${mockToken(
+            "67377289d4eacc7e98dbb939",
+            "delivery_personnel"
+          )}`
+        )
+        .send({
+          delivery_personnel_id: "67377289d4eacc7e98dbb939",
+          status: "en route",
+        });
+
+      assert.equal(res.status, 404);
+      assert.equal(res.body.message, "Delivery not found or already accepted");
+    });
+
+    it("should return 403 if user does not have access", async () => {
+      const res = await request(app)
+        .post(`/delivery/${orderId}`)
+        .set(
+          "Authorization",
+          `Bearer ${mockToken("67377289d4eacc7e98dbb939", "customer")}`
+        ) // Using customer role
+        .send({
+          delivery_personnel_id: "67377289d4eacc7e98dbb939",
+          status: "delivered",
+        });
+
+      assert.equal(res.status, 403);
+      assert.equal(res.body.message, "Access denied");
+    });
+
+    it("should return 404 for non-existing delivery status update", async () => {
+      const res = await request(app)
+        .put(`/delivery/673773b3783410e7350b3ec7`) // Assuming 999 is a non-existent delivery ID
+        .set(
+          "Authorization",
+          `Bearer ${mockToken(
+            "67377289d4eacc7e98dbb939",
+            "delivery_personnel"
+          )}`
+        )
+        .send({ status: "completed" });
+
+      assert.equal(res.status, 404);
+    });
 });
